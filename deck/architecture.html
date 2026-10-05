@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Synthra architecture</title>
+<style>
+  @font-face { font-family: "Geist"; src: url("../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Geist Mono"; src: url("../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; }
+  html, body { margin: 0; background: #ffffff; }
+  svg { display: block; font-family: "Geist", "Segoe UI", sans-serif; }
+  .num { font-family: "Geist Mono", monospace; font-size: 11px; fill: #8d8d8d; }
+  .title { font-size: 16px; font-weight: 600; fill: #1b1b1b; letter-spacing: -0.02em; }
+  .cap { font-size: 12.5px; fill: #5e5e5e; }
+  .sub { font-size: 11.5px; fill: #8d8d8d; }
+  .gov-label { font-family: "Geist Mono", monospace; font-size: 11px; font-weight: 600; fill: #1b1b1b; letter-spacing: 0.06em; }
+  .gov { font-size: 13px; fill: #5e5e5e; }
+  .loop { font-size: 12px; font-weight: 500; fill: #b45309; }
+</style>
+</head>
+<body>
+<svg id="diagram" width="1760" height="286" viewBox="0 0 1760 286" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b5b5b5" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b" />
+    </marker>
+  </defs>
+</svg>
+
+<script>
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.getElementById("diagram");
+  const el = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text) e.textContent = text;
+    svg.appendChild(e);
+    return e;
+  };
+
+  const W = 186, H = 112, Y = 20, STEP = 220, X0 = 17;
+  const nodes = [
+    { dot: "#a3a3a3", title: "Sensitive data", cap: "BigQuery · CSV", sub: "240 victim records" },
+    { dot: "#fb7185", title: "PII Guard", cap: "Sensitive Data Protection", sub: "names & phones locked" },
+    { dot: "#737373", title: "Orchestrator", cap: "ADK · Agent Engine", sub: "reads schema, dispatches" },
+    { dot: "#60a5fa", title: "5 Profiler agents", cap: "Gemini + statistical models", sub: "numbers · categories · text", stack: true },
+    { dot: "#818cf8", title: "Synthesizer", cap: "fuses all profiles", sub: "5,000 synthetic rows" },
+    { dot: "#fb923c", title: "Critic", cap: "12 checks", sub: "fidelity · privacy · fairness", fill: "#fffbeb", stroke: "#f59e0b" },
+    { dot: "#4ade80", title: "Certified twin", cap: "+ report card", sub: "BigQuery · CSV · JSON", fill: "#f0fdf4", stroke: "#86efac" },
+    { dot: "#a78bfa", title: "Human sign-off", cap: "reviewer approves release", sub: "Cloud Logging audit trail" },
+  ];
+
+  // Repair loop (drawn first so the nodes sit on top of it)
+  const cx = (i) => X0 + i * STEP + W / 2;
+  const bottom = Y + H;
+  el("path", {
+    d: `M ${cx(5)} ${bottom} C ${cx(5)} ${bottom + 40}, ${cx(5) - 20} ${bottom + 46}, ${cx(5) - 50} ${bottom + 46} L ${cx(3) + 50} ${bottom + 46} C ${cx(3) + 20} ${bottom + 46}, ${cx(3)} ${bottom + 40}, ${cx(3)} ${bottom + 9}`,
+    fill: "none", stroke: "#f59e0b", "stroke-width": 2, "marker-end": "url(#arrow-amber)",
+  });
+  const mid = (cx(3) + cx(5)) / 2;
+  el("rect", { x: mid - 178, y: bottom + 34, width: 356, height: 24, rx: 12, fill: "#ffffff", stroke: "#f59e0b", "stroke-width": 1.5 });
+  el("text", { x: mid, y: bottom + 50, "text-anchor": "middle", class: "loop" }, "↺  repair loop · each failure goes back to the responsible agent");
+
+  nodes.forEach((n, i) => {
+    const x = X0 + i * STEP;
+    if (n.stack) {
+      el("rect", { x: x + 8, y: Y - 8, width: W, height: H, rx: 12, fill: "#f4f7fc", stroke: "#dbe4f3" });
+      el("rect", { x: x + 4, y: Y - 4, width: W, height: H, rx: 12, fill: "#f8fafd", stroke: "#dbe4f3" });
+    }
+    el("rect", { x, y: Y, width: W, height: H, rx: 12, fill: n.fill || "#ffffff", stroke: n.stroke || "#e3e3e3", "stroke-width": n.stroke ? 1.5 : 1 });
+    el("circle", { cx: x + 20, cy: Y + 22, r: 4, fill: n.dot });
+    el("text", { x: x + 30, y: Y + 26, class: "num" }, String(i + 1).padStart(2, "0"));
+    el("text", { x: x + 16, y: Y + 54, class: "title" }, n.title);
+    el("text", { x: x + 16, y: Y + 78, class: "cap" }, n.cap);
+    el("text", { x: x + 16, y: Y + 97, class: "sub" }, n.sub);
+    if (i < nodes.length - 1) {
+      el("line", { x1: x + W + 7, y1: Y + H / 2, x2: x + STEP - 8, y2: Y + H / 2, stroke: "#b5b5b5", "stroke-width": 1.5, "marker-end": "url(#arrow)" });
+    }
+  });
+
+  // Governance band
+  el("rect", { x: X0, y: 212, width: 1726, height: 56, rx: 12, fill: "#f7f7f8", stroke: "#e9e9e9" });
+  el("rect", { x: X0, y: 212, width: 5, height: 56, rx: 2.5, fill: "#a78bfa" });
+  el("text", { x: X0 + 22, y: 245, class: "gov-label" }, "GOVERNANCE");
+  el("text", { x: X0 + 132, y: 245, class: "gov" },
+    "Real PII never reaches the generators   ·   12 thresholded checks (0 near-copies, 0 leaks)   ·   every repair logged   ·   release blocked until 12/12 pass   ·   human sign-off before use");
+</script>
+</body>
+</html>
